@@ -6,9 +6,6 @@ Verifier    = require './src/verifier'
 MeshbluConfig = require 'meshblu-config'
 
 class Command
-  parseInt: (str) =>
-    parseInt str
-
   parseOptions: =>
     commander
       .version packageJSON.version
