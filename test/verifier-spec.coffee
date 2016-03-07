@@ -13,16 +13,21 @@ describe 'Verifier', ->
     @meshblu.close done
 
   describe '-> verify', ->
+    beforeEach ->
+      @registerRequest = @meshblu.post('/devices')
+      @whoamiRequest = @meshblu.get('/v2/whoami')
+      @unregisterRequest = @meshblu.delete('/devices/device-uuid')
+
     context 'when everything works', ->
       beforeEach (done) ->
-        @registerHandler = @meshblu.post('/devices')
+        @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
           .reply(201, uuid: 'device-uuid')
 
-        @whoamiHandler = @meshblu.get('/v2/whoami')
+        @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
-        @unregisterHandler = @meshblu.delete('/devices/device-uuid')
+        @unregisterHandler = @unregisterRequest
           .reply(204)
 
         @sut.verify (@error) =>
@@ -36,7 +41,7 @@ describe 'Verifier', ->
 
     context 'when register fails', ->
       beforeEach (done) ->
-        @registerHandler = @meshblu.post('/devices')
+        @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
           .reply(500)
 
@@ -49,11 +54,11 @@ describe 'Verifier', ->
 
     context 'when whoami fails', ->
       beforeEach (done) ->
-        @registerHandler = @meshblu.post('/devices')
+        @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
           .reply(201, uuid: 'device-uuid')
 
-        @whoamiHandler = @meshblu.get('/v2/whoami')
+        @whoamiHandler = @whoamiRequest
           .reply(500)
 
         @sut.verify (@error) =>
@@ -66,14 +71,14 @@ describe 'Verifier', ->
 
     context 'when unregister fails', ->
       beforeEach (done) ->
-        @registerHandler = @meshblu.post('/devices')
+        @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
           .reply(201, uuid: 'device-uuid')
 
-        @whoamiHandler = @meshblu.get('/v2/whoami')
+        @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
-        @unregisterHandler = @meshblu.delete('/devices/device-uuid')
+        @unregisterHandler = @unregisterRequest 
           .reply(500)
 
         @sut.verify (@error) =>
