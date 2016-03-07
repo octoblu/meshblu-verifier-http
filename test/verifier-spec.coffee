@@ -2,18 +2,18 @@ shmock = require 'shmock'
 Verifier = require '../src/verifier'
 
 describe 'Verifier', ->
+  beforeEach (done) ->
+    @meshblu = shmock done
+
   beforeEach ->
-    @meshblu = shmock 0xd00d
+    meshbluConfig = server: 'localhost', port: @meshblu.address().port
+    @sut = new Verifier {meshbluConfig}
 
   afterEach (done) ->
-    @meshblu.close => done()
+    @meshblu.close done
 
   describe '-> verify', ->
     context 'when everything works', ->
-      beforeEach ->
-        meshbluConfig = server: 'localhost', port: 0xd00d
-        @sut = new Verifier {meshbluConfig}
-
       beforeEach (done) ->
         @registerHandler = @meshblu.post('/devices')
           .send(type: 'meshblu:verifier')
@@ -35,10 +35,6 @@ describe 'Verifier', ->
         expect(@unregisterHandler.isDone).to.be.true
 
     context 'when register fails', ->
-      beforeEach ->
-        meshbluConfig = server: 'localhost', port: 0xd00d
-        @sut = new Verifier {meshbluConfig}
-
       beforeEach (done) ->
         @registerHandler = @meshblu.post('/devices')
           .send(type: 'meshblu:verifier')
@@ -52,10 +48,6 @@ describe 'Verifier', ->
         expect(@registerHandler.isDone).to.be.true
 
     context 'when whoami fails', ->
-      beforeEach ->
-        meshbluConfig = server: 'localhost', port: 0xd00d
-        @sut = new Verifier {meshbluConfig}
-
       beforeEach (done) ->
         @registerHandler = @meshblu.post('/devices')
           .send(type: 'meshblu:verifier')
@@ -73,10 +65,6 @@ describe 'Verifier', ->
         expect(@whoamiHandler.isDone).to.be.true
 
     context 'when unregister fails', ->
-      beforeEach ->
-        meshbluConfig = server: 'localhost', port: 0xd00d
-        @sut = new Verifier {meshbluConfig}
-
       beforeEach (done) ->
         @registerHandler = @meshblu.post('/devices')
           .send(type: 'meshblu:verifier')
