@@ -7,7 +7,7 @@ describe 'Verifier', ->
 
   beforeEach ->
     meshbluConfig = server: 'localhost', port: @meshblu.address().port
-    @sut = new Verifier {meshbluConfig}
+    @sut = new Verifier {meshbluConfig, nonce: 'some-nonce'}
 
   afterEach (done) ->
     @meshblu.close done
@@ -16,6 +16,8 @@ describe 'Verifier', ->
     beforeEach ->
       @registerRequest = @meshblu.post('/devices')
       @whoamiRequest = @meshblu.get('/v2/whoami')
+      @updateRequest = @meshblu.patch('/v2/devices/device-uuid')
+      @whoamiUpdateRequest = @meshblu.get('/v2/whoami')
       @unregisterRequest = @meshblu.delete('/devices/device-uuid')
 
     context 'when everything works', ->
@@ -27,6 +29,12 @@ describe 'Verifier', ->
         @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
+        @updateHandler = @updateRequest
+          .reply(204)
+
+        @whoamiUpdateHandler = @whoamiUpdateRequest
+          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier', nonce: 'some-nonce')
+
         @unregisterHandler = @unregisterRequest
           .reply(204)
 
@@ -37,6 +45,8 @@ describe 'Verifier', ->
         expect(@error).not.to.exist
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
+        expect(@updateHandler.isDone).to.be.true
+        expect(@whoamiUpdateHandler.isDone).to.be.true
         expect(@unregisterHandler.isDone).to.be.true
 
     context 'when register fails', ->
@@ -69,7 +79,7 @@ describe 'Verifier', ->
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
 
-    context 'when unregister fails', ->
+    context 'when update fails', ->
       beforeEach (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
@@ -78,7 +88,7 @@ describe 'Verifier', ->
         @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
-        @unregisterHandler = @unregisterRequest 
+        @updateHandler = @updateRequest
           .reply(500)
 
         @sut.verify (@error) =>
@@ -88,4 +98,32 @@ describe 'Verifier', ->
         expect(@error).to.exist
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
+        expect(@updateHandler.isDone).to.be.true
+
+    context 'when unregister fails', ->
+      beforeEach (done) ->
+        @registerHandler = @registerRequest
+          .send(type: 'meshblu:verifier')
+          .reply(201, uuid: 'device-uuid')
+
+        @whoamiHandler = @whoamiRequest
+          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
+
+        @updateHandler = @updateRequest
+          .reply(204)
+
+        @whoamiUpdateHandler = @whoamiUpdateRequest
+          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier', nonce: 'some-nonce')
+
+        @unregisterHandler = @unregisterRequest
+          .reply(500)
+
+        @sut.verify (@error) =>
+          done()
+
+      it 'should error', ->
+        expect(@error).to.exist
+        expect(@registerHandler.isDone).to.be.true
+        expect(@whoamiHandler.isDone).to.be.true
+        expect(@updateHandler.isDone).to.be.true
         expect(@unregisterHandler.isDone).to.be.true
