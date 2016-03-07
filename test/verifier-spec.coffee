@@ -6,8 +6,9 @@ describe 'Verifier', ->
     @meshblu = shmock done
 
   beforeEach ->
+    @nonce = Date.now()
     meshbluConfig = server: 'localhost', port: @meshblu.address().port
-    @sut = new Verifier {meshbluConfig, nonce: 'some-nonce'}
+    @sut = new Verifier {meshbluConfig, nonce: @nonce}
 
   afterEach (done) ->
     @meshblu.close done
@@ -33,7 +34,7 @@ describe 'Verifier', ->
           .reply(204)
 
         @whoamiUpdateHandler = @whoamiUpdateRequest
-          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier', nonce: 'some-nonce')
+          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier', nonce: @nonce)
 
         @unregisterHandler = @unregisterRequest
           .reply(204)
@@ -113,7 +114,7 @@ describe 'Verifier', ->
           .reply(204)
 
         @whoamiUpdateHandler = @whoamiUpdateRequest
-          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier', nonce: 'some-nonce')
+          .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier', nonce: @nonce)
 
         @unregisterHandler = @unregisterRequest
           .reply(500)
