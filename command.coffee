@@ -18,7 +18,14 @@ class Command
     timeoutSeconds = parseInt(process.env.TIMEOUT_SECONDS) if process.env.TIMEOUT_SECONDS
     setTimeout @timeoutAndDie, timeoutSeconds * 1000
     meshbluConfig = new MeshbluConfig().toJSON()
-    verifier = new Verifier {meshbluConfig}
+    meshbluStreamingConfig = new MeshbluConfig({}, {
+      filename: 'meshblu-streaming.json'
+      server_env_name: 'MESHBLU_STREAMING_HOSTNAME'
+      hostname_env_name: 'MESHBLU_STREAMING_HOSTNAME'
+      port_env_name: 'MESHBLU_STREAMING_PORT'
+      protocol_env_name: 'MESHBLU_STREAMING_PROTOCOL'
+    }).toJSON()
+    verifier = new Verifier {meshbluConfig, meshbluStreamingConfig}
     verifier.verify (error) =>
       @die error if error?
       console.log 'meshblu-verifier-http successful'
