@@ -1,24 +1,28 @@
 async       = require 'async'
+_           = require 'lodash'
 MeshbluHttp = require 'meshblu-http'
 request     = require 'request'
+url         = require 'url'
 
 class Verifier
-  constructor: ({meshbluConfig, @meshbluStreamingConfig, @nonce}) ->
+  constructor: ({@meshbluConfig, @meshbluStreamingConfig, @nonce}) ->
     @nonce ?= Date.now()
-    @meshblu = new MeshbluHttp meshbluConfig
+    @meshblu = new MeshbluHttp @meshbluConfig
 
   _message: (callback) =>
-    url = "#{@meshbluStreamingConfig.protocol}://#{@meshbluStreamingConfig.hostname}:#{@meshbluStreamingConfig.port}/subscribe"
+    {protocol, hostname, port} = @meshbluStreamingConfig
+    uri = url.format {protocol, hostname, port, pathname: '/subscribe'}
     options =
       auth:
-        username: @meshblu.uuid
-        password: @meshblu.token
+        username: @meshbluConfig.uuid
+        password: @meshbluConfig.token
       json:
         types: ['received']
 
-    response = request.get url, options
+    response = request.get uri, options
     response.on 'data', (message) =>
       response.abort()
+      console.log message.toString()
       message = JSON.parse message.toString()
       return callback new Error 'wrong message received' unless message?.payload == @nonce
       callback()
@@ -27,7 +31,7 @@ class Verifier
 
     setTimeout =>
       message =
-        devices: [@meshblu.uuid]
+        devices: [@meshbluConfig.uuid]
         payload: @nonce
 
       @meshblu.message message
@@ -36,8 +40,8 @@ class Verifier
   _register: (callback) =>
     @meshblu.register type: 'meshblu:verifier', (error, @device) =>
       return callback error if error?
-      @meshblu.uuid = @device.uuid
-      @meshblu.token = @device.token
+      @meshbluConfig = _.defaults _.pick(@device, 'uuid', 'token'), @meshbluConfig
+      @meshblu = new MeshbluHttp @meshbluConfig
       callback()
 
   _whoami: (callback) =>
@@ -47,10 +51,10 @@ class Verifier
     return callback() unless @device?
 
     params =
-      uuid: @meshblu.uuid
+      uuid: @meshbluConfig.uuid
       nonce: @nonce
 
-    @meshblu.update @meshblu.uuid, params, (error) =>
+    @meshblu.update @meshbluConfig.uuid, params, (error) =>
       return callback error if error?
       @meshblu.whoami (error, data) =>
         return callback error if error?
