@@ -1,4 +1,5 @@
 async       = require 'async'
+debug       = require('debug')('meshblu-verifier-http:verifier')
 _           = require 'lodash'
 MeshbluHttp = require 'meshblu-http'
 request     = require 'request'
@@ -9,7 +10,17 @@ class Verifier
     @nonce ?= Date.now()
     @meshblu = new MeshbluHttp @meshbluConfig
 
+  verify: (callback) =>
+    async.series [
+      @_register
+      @_whoami
+      @_message
+      @_update
+      @_unregister
+    ], callback
+
   _message: (callback) =>
+    debug '_message'
     {protocol, hostname, port} = @meshbluStreamingConfig
     uri = url.format {protocol, hostname, port, pathname: '/subscribe'}
     options =
@@ -38,16 +49,20 @@ class Verifier
     , 500
 
   _register: (callback) =>
+    debug '_register'
     @meshblu.register type: 'meshblu:verifier', (error, @device) =>
       return callback error if error?
       @meshbluConfig = _.defaults _.pick(@device, 'uuid', 'token'), @meshbluConfig
       @meshblu = new MeshbluHttp @meshbluConfig
       callback()
 
-  _whoami: (callback) =>
-    @meshblu.whoami callback
+  _unregister: (callback) =>
+    debug '_unregister'
+    return callback() unless @device?
+    @meshblu.unregister @device, callback
 
   _update: (callback) =>
+    debug '_update'
     return callback() unless @device?
 
     params =
@@ -61,17 +76,8 @@ class Verifier
         return callback new Error 'update failed' unless data?.nonce == @nonce
         callback()
 
-  _unregister: (callback) =>
-    return callback() unless @device?
-    @meshblu.unregister @device, callback
-
-  verify: (callback) =>
-    async.series [
-      @_register
-      @_whoami
-      @_message
-      @_update
-      @_unregister
-    ], callback
+  _whoami: (callback) =>
+    debug '_whoami'
+    @meshblu.whoami callback
 
 module.exports = Verifier

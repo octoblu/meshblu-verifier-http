@@ -1,26 +1,29 @@
+{afterEach, beforeEach, context, describe, it} = global
+{expect} = require 'chai'
+
 shmock = require 'shmock'
 Verifier = require '../src/verifier'
 enableDestroy = require 'server-destroy'
 
 describe 'Verifier', ->
-  beforeEach (done) ->
+  beforeEach 'start Meshblu', (done) ->
     @meshblu = shmock done
     enableDestroy @meshblu
 
-  beforeEach (done) ->
+  beforeEach 'start Meshblu streaming', (done) ->
     @meshbluStreaming = shmock done
     enableDestroy @meshbluStreaming
 
-  beforeEach ->
+  beforeEach 'instantiate Verifier', ->
     @nonce = Date.now()
-    meshbluConfig = server: 'localhost', port: @meshblu.address().port, protocol: 'http'
+    meshbluConfig = hostname: 'localhost', port: @meshblu.address().port, protocol: 'http'
     meshbluStreamingConfig = hostname: 'localhost', port: @meshbluStreaming.address().port, protocol: 'http'
     @sut = new Verifier {meshbluConfig, meshbluStreamingConfig, nonce: @nonce}
 
-  afterEach (done) ->
+  afterEach 'destroy Meshblu streaming', (done) ->
     @meshbluStreaming.destroy done
 
-  afterEach (done) ->
+  afterEach 'destroy Meshblu', (done) ->
     @meshblu.destroy done
 
   describe '-> verify', ->
@@ -33,7 +36,7 @@ describe 'Verifier', ->
       @subscribeRequest = @meshbluStreaming.get '/subscribe'
 
     context 'when everything works', ->
-      beforeEach (done) ->
+      beforeEach 'create handlers', (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
           .reply(201, uuid: 'device-uuid')
