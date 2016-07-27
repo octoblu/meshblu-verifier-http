@@ -33,7 +33,6 @@ class Verifier
     response = request.get uri, options
     response.on 'data', (message) =>
       response.abort()
-      console.log message.toString()
       message = JSON.parse message.toString()
       return callback new Error 'wrong message received' unless message?.payload == @nonce
       callback()
