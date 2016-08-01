@@ -1,6 +1,6 @@
 {
   "name": "meshblu-verifier-http",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "description": "Verify Meshblu over HTTP",
   "main": "index.js",
   "scripts": {
@@ -35,11 +35,13 @@
   "dependencies": {
     "async": "^1.5.0",
     "coffee-script": "^1.10.0",
-    "commander": "^2.9.0",
+    "colors": "^1.1.2",
+    "dashdash": "^1.14.0",
     "debug": "^2.2.0",
     "lodash": "^3.10.1",
     "meshblu-config": "^5.1.1",
     "meshblu-http": "^7.0.0",
+    "moment": "^2.14.1",
     "request": "^2.72.0"
   }
 }

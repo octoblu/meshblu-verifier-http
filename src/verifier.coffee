@@ -30,7 +30,11 @@ class Verifier
       json:
         types: ['received']
 
-    response = request.get uri, options
+    try
+      response = request.get uri, options
+    catch error
+      return callback error if error?
+
     response.on 'data', (message) =>
       response.abort()
       message = JSON.parse message.toString()
