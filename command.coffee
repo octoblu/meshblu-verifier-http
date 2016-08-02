@@ -87,7 +87,7 @@ class Command
 
   timeoutAndDie: =>
     console.log 'meshblu-verifier-http timeout'
-    @die new Error 'Timeout Exceeded'
+    @logResult new Error 'Timeout Exceeded'
 
 commandWork = new Command()
 commandWork.run()
