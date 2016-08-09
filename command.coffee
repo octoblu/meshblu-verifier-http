@@ -75,6 +75,7 @@ class Command
         expires: moment().add(@log_expiration, 'seconds')
         error:
           message: error?.message
+          step:    error?.step
     }, (httpError) =>
       @die httpError if httpError?
       @die error if error?

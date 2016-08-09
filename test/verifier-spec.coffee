@@ -80,6 +80,7 @@ describe 'Verifier', ->
 
       it 'should error', ->
         expect(@error).to.exist
+        expect(@error.step).to.deep.equal "register"
         expect(@registerHandler.isDone).to.be.true
 
     context 'when whoami fails', ->
@@ -96,6 +97,7 @@ describe 'Verifier', ->
 
       it 'should error', ->
         expect(@error).to.exist
+        expect(@error.step).to.deep.equal "whoami"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
 
@@ -116,6 +118,7 @@ describe 'Verifier', ->
 
       it 'should error', ->
         expect(@error).to.exist
+        expect(@error.step).to.deep.equal "message"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
         expect(@subscribeHandler.isDone).to.be.true
@@ -141,6 +144,7 @@ describe 'Verifier', ->
 
       it 'should error', ->
         expect(@error).to.exist
+        expect(@error.step).to.deep.equal "update"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
         expect(@subscribeHandler.isDone).to.be.true
@@ -173,6 +177,7 @@ describe 'Verifier', ->
 
       it 'should error', ->
         expect(@error).to.exist
+        expect(@error.step).to.deep.equal "unregister"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
         expect(@subscribeHandler.isDone).to.be.true
