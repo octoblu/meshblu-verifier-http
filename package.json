@@ -1,6 +1,6 @@
 {
   "name": "meshblu-verifier-http",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Verify Meshblu over HTTP",
   "main": "index.js",
   "scripts": {

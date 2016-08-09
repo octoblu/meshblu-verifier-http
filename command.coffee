@@ -69,6 +69,7 @@ class Command
     verifier.verify @logResult
 
   logResult: (error) =>
+    console.error 'error w/step', {message: error.message, step: error.step} if error?
     request.post @log_url, {
       json:
         success: !error?
