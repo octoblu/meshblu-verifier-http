@@ -9,7 +9,8 @@ request       = require 'request'
 packageJSON = require './package.json'
 Verifier    = require './src/verifier'
 
-VERIFIER_NAME='meshblu-verifier-http'
+VERIFIER_NAME ='meshblu-verifier-http'
+debug         = require('debug')("#{VERIFIER_NAME}:command")
 
 OPTIONS = [
   {
@@ -62,15 +63,17 @@ OPTIONS = [
 
 class Command
   constructor: ->
-    process.on 'uncaughtException', @die
+    process.on 'uncaughtException', @printAndDie
     @parser = dashdash.createParser options: OPTIONS
+    options = @parseOptions()
+    debug 'got options', options
     {
       @log_expiration,
       @log_url,
       @forever,
       @interval,
       @timeout,
-    } = @parseOptions()
+    } = options
 
   printHelp: =>
     options = {includeEnv: true, includeDefault: true}
@@ -103,7 +106,9 @@ class Command
       , @die
 
   runOnce: (callback) =>
-    run = async.timeout @_runOnce, (@timeout * 1000)
+    timeoutSeconds = (@timeout * 1000)
+    debug 'running with timeout', timeoutSeconds
+    run = async.timeout @_runOnce, timeoutSeconds
     run (error) =>
       error = new Error 'Timeout Exceeded' if error?.code == 'ETIMEDOUT'
       @logResult error, callback
@@ -120,13 +125,15 @@ class Command
     verifier.verify callback
 
   logResult: (error, callback) =>
+    debug 'logging results', { error }
     request.post @log_url, {
       json:
         success: !error?
         expires: moment().add(@log_expiration, 'seconds')
         error:
           message: error?.message
-    }, (httpError) =>
+    }, (httpError, response) =>
+      debug 'log results http error', httpError, response?.statusCode
       error ?= httpError
       @print error
       return callback error if error?
@@ -140,6 +147,10 @@ class Command
   die: (error) =>
     process.exit(0) unless error?
     process.exit(1) if error?
+
+  printAndDie: (error) =>
+    @print error
+    @die error
 
 commandWork = new Command()
 commandWork.run()
