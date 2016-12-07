@@ -10,18 +10,10 @@ describe 'Verifier', ->
     @meshblu = shmock done
     enableDestroy @meshblu
 
-  beforeEach 'start Meshblu streaming', (done) ->
-    @meshbluStreaming = shmock done
-    enableDestroy @meshbluStreaming
-
   beforeEach 'instantiate Verifier', ->
     @nonce = Date.now()
     meshbluConfig = hostname: 'localhost', port: @meshblu.address().port, protocol: 'http'
-    meshbluStreamingConfig = hostname: 'localhost', port: @meshbluStreaming.address().port, protocol: 'http'
-    @sut = new Verifier {meshbluConfig, meshbluStreamingConfig, nonce: @nonce}
-
-  afterEach 'destroy Meshblu streaming', (done) ->
-    @meshbluStreaming.destroy done
+    @sut = new Verifier {meshbluConfig, nonce: @nonce}
 
   afterEach 'destroy Meshblu', (done) ->
     @meshblu.destroy done
@@ -29,20 +21,24 @@ describe 'Verifier', ->
   describe '-> verify', ->
     beforeEach ->
       @registerRequest = @meshblu.post '/devices'
+      @messageRequest = @meshblu.post '/messages'
       @whoamiRequest = @meshblu.get '/v2/whoami'
       @updateRequest = @meshblu.patch '/v2/devices/device-uuid'
       @whoamiUpdateRequest = @meshblu.get '/v2/whoami'
       @unregisterRequest = @meshblu.delete '/devices/device-uuid'
-      @subscribeRequest = @meshbluStreaming.get '/subscribe'
 
     context 'when everything works', ->
       beforeEach 'create handlers', (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
-          .reply(201, uuid: 'device-uuid')
+          .reply(201, uuid: 'device-uuid', token: 'device-token')
 
         @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
+
+        @messageHandler = @messageRequest
+          .send devices: ['device-uuid'], payload: @nonce
+          .reply 204
 
         @updateHandler = @updateRequest
           .reply(204)
@@ -53,10 +49,6 @@ describe 'Verifier', ->
         @unregisterHandler = @unregisterRequest
           .reply(204)
 
-        @subscribeHandler = @subscribeRequest
-          .send(types: ['received'])
-          .reply(200, payload: @nonce)
-
         @sut.verify (@error) =>
           done @error
 
@@ -64,7 +56,7 @@ describe 'Verifier', ->
         expect(@error).not.to.exist
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
-        expect(@subscribeHandler.isDone).to.be.true
+        expect(@messageHandler.isDone).to.be.true
         expect(@updateHandler.isDone).to.be.true
         expect(@whoamiUpdateHandler.isDone).to.be.true
         expect(@unregisterHandler.isDone).to.be.true
@@ -87,7 +79,7 @@ describe 'Verifier', ->
       beforeEach (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
-          .reply(201, uuid: 'device-uuid')
+          .reply(201, uuid: 'device-uuid', token: 'device-token')
 
         @whoamiHandler = @whoamiRequest
           .reply(500)
@@ -105,13 +97,14 @@ describe 'Verifier', ->
       beforeEach (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
-          .reply(201, uuid: 'device-uuid')
+          .reply(201, uuid: 'device-uuid', token: 'device-token')
 
         @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
-        @subscribeHandler = @subscribeRequest
-          .reply(500)
+        @messageHandler = @messageRequest
+          .send devices: ['device-uuid'], payload: @nonce
+          .reply 504
 
         @sut.verify (@error) =>
           done()
@@ -121,20 +114,20 @@ describe 'Verifier', ->
         expect(@error.step).to.deep.equal "message"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
-        expect(@subscribeHandler.isDone).to.be.true
+        expect(@messageHandler.isDone).to.be.true
 
     context 'when update fails', ->
       beforeEach (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
-          .reply(201, uuid: 'device-uuid')
+          .reply(201, uuid: 'device-uuid', token: 'device-token')
 
         @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
-        @subscribeHandler = @subscribeRequest
-          .send(types: ['received'])
-          .reply(200, payload: @nonce)
+        @messageHandler = @messageRequest
+          .send devices: ['device-uuid'], payload: @nonce
+          .reply 204
 
         @updateHandler = @updateRequest
           .reply(500)
@@ -147,21 +140,21 @@ describe 'Verifier', ->
         expect(@error.step).to.deep.equal "update"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
-        expect(@subscribeHandler.isDone).to.be.true
+        expect(@messageHandler.isDone).to.be.true
         expect(@updateHandler.isDone).to.be.true
 
     context 'when unregister fails', ->
       beforeEach (done) ->
         @registerHandler = @registerRequest
           .send(type: 'meshblu:verifier')
-          .reply(201, uuid: 'device-uuid')
+          .reply(201, uuid: 'device-uuid', token: 'device-token')
 
         @whoamiHandler = @whoamiRequest
           .reply(200, uuid: 'device-uuid', type: 'meshblu:verifier')
 
-        @subscribeHandler = @subscribeRequest
-          .send(types: ['received'])
-          .reply(200, payload: @nonce)
+        @messageHandler = @messageRequest
+          .send devices: ['device-uuid'], payload: @nonce
+          .reply 204
 
         @updateHandler = @updateRequest
           .reply(204)
@@ -180,6 +173,6 @@ describe 'Verifier', ->
         expect(@error.step).to.deep.equal "unregister"
         expect(@registerHandler.isDone).to.be.true
         expect(@whoamiHandler.isDone).to.be.true
-        expect(@subscribeHandler.isDone).to.be.true
+        expect(@messageHandler.isDone).to.be.true
         expect(@updateHandler.isDone).to.be.true
         expect(@unregisterHandler.isDone).to.be.true
