@@ -2,11 +2,9 @@ async       = require 'async'
 debug       = require('debug')('meshblu-verifier-http:verifier')
 _           = require 'lodash'
 MeshbluHttp = require 'meshblu-http'
-request     = require 'request'
-url         = require 'url'
 
 class Verifier
-  constructor: ({@meshbluConfig, @meshbluStreamingConfig, @nonce}) ->
+  constructor: ({@meshbluConfig, @nonce}) ->
     @nonce ?= Date.now()
     @meshblu = new MeshbluHttp @meshbluConfig
 
@@ -20,40 +18,11 @@ class Verifier
     ], callback
 
   _message: (callback) =>
-    callback = _.once callback
     debug '_message'
-    {protocol, hostname, port} = @meshbluStreamingConfig
-    uri = url.format {protocol, hostname, port, pathname: '/subscribe'}
-    options =
-      auth:
-        username: @meshbluConfig.uuid
-        password: @meshbluConfig.token
-      json:
-        types: ['received']
 
-    try
-      response = request.get uri, options
-    catch error
-      return callback @_injectStep error, 'message'
-
-    response.on 'data', (message) =>
-      response.abort()
-      message = JSON.parse message.toString()
-      return callback @_injectStep(new Error('wrong message received'), 'message') unless message?.payload == @nonce
-
-      callback()
-    response.on 'response', (response) =>
-      return callback @_injectStep(new Error('failed'), 'message') if response.statusCode > 499
-
-
-    setTimeout =>
-      message =
-        devices: [@meshbluConfig.uuid]
-        payload: @nonce
-
-      @meshblu.message message, (error) =>
-        return callback @_injectStep error, 'message' if error?
-    , 500
+    @meshblu.message devices: [@meshbluConfig.uuid], payload: @nonce, (error) =>
+      return callback @_injectStep error, 'message' if error?
+      return callback()
 
   _register: (callback) =>
     debug '_register'

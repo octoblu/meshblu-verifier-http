@@ -115,13 +115,7 @@ class Command
 
   _runOnce: (callback) =>
     meshbluConfig = new MeshbluConfig().toJSON()
-    meshbluStreamingConfig = new MeshbluConfig({}, {
-      filename:          'meshblu-streaming.json'
-      hostname_env_name: 'MESHBLU_STREAMING_HOSTNAME'
-      port_env_name:     'MESHBLU_STREAMING_PORT'
-      protocol_env_name: 'MESHBLU_STREAMING_PROTOCOL'
-    }).toJSON()
-    verifier = new Verifier {meshbluConfig, meshbluStreamingConfig}
+    verifier = new Verifier {meshbluConfig}
     verifier.verify callback
 
   logResult: (error, callback) =>
